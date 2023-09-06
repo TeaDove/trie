@@ -15,7 +15,22 @@ type Trie[K comparable, T any] struct {
 // New creates empty Trie.
 func New[K comparable, T any]() *Trie[K, T] {
 	var emptyKey K
+
 	return &Trie[K, T]{root: makeNode[K, T](emptyKey)}
+}
+
+type Pair[K comparable, T any] struct {
+	Key   []K
+	Value T
+}
+
+// NewFromSlice creates Trie from slice of Pairs.
+func NewFromSlice[K comparable, T any](pairs []Pair[K, T]) *Trie[K, T] {
+	trie := New[K, T]()
+	for _, pair := range pairs {
+		trie.Add(pair.Key, pair.Value)
+	}
+	return trie
 }
 
 // Add inserts new key/value pair.
@@ -127,6 +142,7 @@ func writeNode[K comparable, T any](
 	level int,
 ) {
 	var empty K
+
 	template := "key: '%c'"
 
 	if level > 0 {

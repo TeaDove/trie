@@ -13,8 +13,8 @@
 
 Generic prefix tree for golang  
 Has 2 versions:
-- trie: string keyed Trie. Keys are strings, value are generic. Use case: text prefix search. 
-- gtrie: generic keyed Trie. Key can be any comparable value: byte, string, int etc. Use case: OS path searches. 
+- trie: string keyed Trie. Keys are strings, Value are generic. Use case: text prefix search. 
+- gtrie: generic keyed Trie. Key can be any comparable Value: byte, string, int etc. Use case: OS path searches. 
 
 # Example Trie
 
@@ -58,8 +58,8 @@ import (
 )
 
 func main() {
-	walker := func(key []string, value int) {
-		fmt.Printf("%s, %d", strings.Join(key, "/"), value)
+	walker := func(Key []string, Value int) {
+		fmt.Printf("%s, %d", strings.Join(Key, "/"), Value)
 	}
 
 	tr := gtrie.New[string, int]()
@@ -81,18 +81,18 @@ func main() {
 ### Trie
 ```go
 func New() *Trie[T]
-func (t *Trie[T]) Add(key string, value T)
-func (t *Trie[T]) Del(key string) (ok bool)
-func (t *Trie[T]) Find(key string) (value T, ok bool)
+func (t *Trie[T]) Add(Key string, Value T)
+func (t *Trie[T]) Del(Key string) (ok bool)
+func (t *Trie[T]) Find(Key string) (Value T, ok bool)
 func (t *Trie[T]) String() string
 func (t *Trie[T]) Suggest(prefix string) (rv []string, ok bool)
 ```
 ### GTrie
 ```go
 func New() *GTrie[K, T]
-func (t *Trie[K, T]) Add(key []K, value T)
-func (t *Trie[K, T]) Del(key []K) (ok bool)
-func (t *Trie[K, T]) Find(key []K) (value T, ok bool)
+func (t *Trie[K, T]) Add(Key []K, Value T)
+func (t *Trie[K, T]) Del(Key []K) (ok bool)
+func (t *Trie[K, T]) Find(Key []K) (Value T, ok bool)
 func (t *Trie[K, T]) String() string
 func (t *Trie[K, T]) Suggest(prefix []K) (rv [][]K, ok bool)
 ```

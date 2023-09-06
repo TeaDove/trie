@@ -1,10 +1,11 @@
 package gtrie_test
 
 import (
-	"github.com/s0rg/trie"
-	"github.com/s0rg/trie/gtrie"
 	"strings"
 	"testing"
+
+	"github.com/s0rg/trie"
+	"github.com/s0rg/trie/gtrie"
 )
 
 func TestTrieFind(t *testing.T) {
@@ -234,4 +235,37 @@ func FuzzTrie(f *testing.F) {
 			}
 		}
 	})
+}
+
+func TestNewFromSlice(t *testing.T) {
+	t.Parallel()
+
+	tr := gtrie.NewFromSlice[byte, int]([]gtrie.Pair[byte, int]{
+		{[]byte("bak"), 2},
+		{[]byte("bar"), 3},
+		{[]byte("boo"), 4},
+		{[]byte("ark"), 1},
+	})
+	result := make(map[string]int, 10)
+
+	walker := func(key []byte, value int) {
+		result[string(key)] = value
+	}
+
+	tr.Iter([]byte("b"), walker)
+
+	if result["bak"] != 2 {
+		t.Fatal("Key not found")
+	}
+	if result["bar"] != 3 {
+		t.Fatal("Key not found")
+	}
+	if result["boo"] != 4 {
+		t.Fatal("Key not found")
+	}
+
+	_, ok := result["arc"]
+	if ok {
+		t.Fatal("Key found, but don't need to exists")
+	}
 }

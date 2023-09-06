@@ -19,7 +19,22 @@ func New[T any]() *Trie[T] {
 	return &Trie[T]{root: makeNode[T](rootNode)}
 }
 
-// Add inserts new key/value pair.
+type Pair[T any] struct {
+	Key   string
+	Value T
+}
+
+// NewFromSlice creates Trie from slice of Pairs.
+func NewFromSlice[T any](pairs []Pair[T]) *Trie[T] {
+	trie := New[T]()
+	for _, pair := range pairs {
+		trie.Add(pair.Key, pair.Value)
+	}
+
+	return trie
+}
+
+// Add inserts new Key/Value pair.
 func (t *Trie[T]) Add(key string, value T) {
 	n := t.root
 
@@ -50,7 +65,7 @@ func (t *Trie[T]) find(key string) (n *node[T], ok bool) {
 	return n, true
 }
 
-// Del removes node by key.
+// Del removes node by Key.
 func (t *Trie[T]) Del(key string) (ok bool) {
 	var n, p *node[T]
 
@@ -75,7 +90,7 @@ func (t *Trie[T]) Del(key string) (ok bool) {
 	return true
 }
 
-// Find does tree-lookup in order to find value associated with given key.
+// Find does tree-lookup in order to find Value associated with given Key.
 func (t *Trie[T]) Find(key string) (value T, ok bool) {
 	var n *node[T]
 
@@ -127,7 +142,7 @@ func writeNode[T any](
 	n *node[T],
 	level int,
 ) {
-	template := "key: '%c'"
+	template := "Key: '%c'"
 
 	if level > 0 {
 		template = strings.Repeat("\t", level) + template
@@ -135,7 +150,7 @@ func writeNode[T any](
 
 	switch {
 	case n.HasValue():
-		_, _ = fmt.Fprintf(w, template+" value: '%v'", n.key, n.Value())
+		_, _ = fmt.Fprintf(w, template+" Value: '%v'", n.key, n.Value())
 	case n.key == rootNode:
 		_, _ = fmt.Fprint(w, "root")
 	default:

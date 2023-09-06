@@ -40,7 +40,7 @@ func TestTrieFind(t *testing.T) {
 		}
 
 		if val != c.Want {
-			t.Fatalf("value not match got: %d want: %d", val, c.Want)
+			t.Fatalf("Value not match got: %d want: %d", val, c.Want)
 		}
 	}
 
@@ -105,7 +105,7 @@ func TestTrieDel(t *testing.T) {
 	}
 
 	if val != vbark {
-		t.Fatalf("'bark' value mismatch want: %d got: %d", vbark, val)
+		t.Fatalf("'bark' Value mismatch want: %d got: %d", vbark, val)
 	}
 }
 
@@ -123,7 +123,7 @@ func TestTrieString(t *testing.T) {
 
 	res := tr.String()
 
-	if got := strings.Count(res, "key"); got != wantKeys {
+	if got := strings.Count(res, "Key"); got != wantKeys {
 		t.Fatalf("unexpected keys count want: %d got: %d", wantKeys, got)
 	}
 }
@@ -147,18 +147,18 @@ func TestTrieWalk(t *testing.T) {
 	tr.Iter("b", walker)
 
 	if result["bak"] != 2 {
-		t.Fatal("key not found")
+		t.Fatal("Key not found")
 	}
 	if result["bar"] != 3 {
-		t.Fatal("key not found")
+		t.Fatal("Key not found")
 	}
 	if result["boo"] != 4 {
-		t.Fatal("key not found")
+		t.Fatal("Key not found")
 	}
 
 	_, ok := result["arc"]
 	if ok {
-		t.Fatal("key found, but don't need to exists")
+		t.Fatal("Key found, but don't need to exists")
 	}
 }
 
@@ -230,8 +230,42 @@ func FuzzTrie(f *testing.F) {
 
 		for k, v := range m {
 			if got, ok := tr.Find(k); !ok || got != v {
-				t.Errorf("key %q, want %q, got %q", k, v, got)
+				t.Errorf("Key %q, want %q, got %q", k, v, got)
 			}
 		}
 	})
+}
+
+func TestNewFromSlice(t *testing.T) {
+	t.Parallel()
+
+	tr := trie.NewFromSlice[int]([]trie.Pair[int]{
+		{"arc", 1},
+		{"bak", 2},
+		{"bar", 3},
+		{"boo", 4},
+	})
+
+	result := make(map[string]int, 10)
+
+	walker := func(key string, value int) {
+		result[key] = value
+	}
+
+	tr.Iter("b", walker)
+
+	if result["bak"] != 2 {
+		t.Fatal("Key not found")
+	}
+	if result["bar"] != 3 {
+		t.Fatal("Key not found")
+	}
+	if result["boo"] != 4 {
+		t.Fatal("Key not found")
+	}
+
+	_, ok := result["arc"]
+	if ok {
+		t.Fatal("Key found, but don't need to exists")
+	}
 }
