@@ -159,7 +159,7 @@ func writeNode[T any](
 
 	_, _ = fmt.Fprintln(w)
 
-	for _, c := range n.childs {
+	for _, c := range n.children {
 		writeNode(w, c, level+1)
 	}
 }
@@ -169,7 +169,7 @@ func dfsKeys[T any](
 	prefix string,
 	handler func(key string, value T),
 ) {
-	for r, c := range n.childs {
+	for r, c := range n.children {
 		key := prefix + string(r)
 
 		if c.HasValue() {
