@@ -1,28 +1,29 @@
-package trie_test
+package gtrie_test
 
 import (
 	"strings"
 	"testing"
 
 	"github.com/s0rg/trie"
+	"github.com/s0rg/trie/gtrie"
 )
 
 func TestTrieFind(t *testing.T) {
 	t.Parallel()
 
-	tr := trie.New[int]()
+	tr := gtrie.New[byte, int]()
 
 	type testCase struct {
-		Path string
+		Path []byte
 		Want int
 	}
 
 	cases := []testCase{
-		{"ban", 1},
-		{"banana", 2},
-		{"boo", 3},
-		{"bandana", 4},
-		{"foo", 5},
+		{[]byte("ban"), 1},
+		{[]byte("banana"), 2},
+		{[]byte("boo"), 3},
+		{[]byte("bandana"), 4},
+		{[]byte("foo"), 5},
 	}
 
 	for _, c := range cases {
@@ -40,11 +41,11 @@ func TestTrieFind(t *testing.T) {
 		}
 
 		if val != c.Want {
-			t.Fatalf("Value not match got: %d want: %d", val, c.Want)
+			t.Fatalf("value not match got: %d want: %d", val, c.Want)
 		}
 	}
 
-	nonexistent := []string{"ba", "bo", "band", "fan"}
+	nonexistent := [][]byte{[]byte("ba"), []byte("bo"), []byte("band"), []byte("fan")}
 
 	for _, c := range nonexistent {
 		if _, ok = tr.Find(c); ok {
@@ -56,19 +57,19 @@ func TestTrieFind(t *testing.T) {
 func TestTrieDel(t *testing.T) {
 	t.Parallel()
 
-	tr := trie.New[int]()
+	tr := gtrie.New[byte, int]()
 
-	const (
-		kbar  = "bar"
-		kbark = "bark"
-		kfoo  = "foobar"
+	var (
+		kbar  = []byte("bar")
+		kbark = []byte("bark")
+		kfoo  = []byte("foobar")
 		vbark = 3
 	)
 
 	tr.Add(kbar, 1)
-	tr.Add("baz", 2)
+	tr.Add([]byte("baz"), 2)
 	tr.Add(kbark, vbark)
-	tr.Add("boo", 4)
+	tr.Add([]byte("boo"), 4)
 	tr.Add(kfoo, 5)
 
 	var (
@@ -105,7 +106,7 @@ func TestTrieDel(t *testing.T) {
 	}
 
 	if val != vbark {
-		t.Fatalf("'bark' Value mismatch want: %d got: %d", vbark, val)
+		t.Fatalf("'bark' value mismatch want: %d got: %d", vbark, val)
 	}
 }
 
@@ -123,7 +124,7 @@ func TestTrieString(t *testing.T) {
 
 	res := tr.String()
 
-	if got := strings.Count(res, "Key"); got != wantKeys {
+	if got := strings.Count(res, "key"); got != wantKeys {
 		t.Fatalf("unexpected keys count want: %d got: %d", wantKeys, got)
 	}
 }
@@ -133,55 +134,55 @@ func TestTrieWalk(t *testing.T) {
 
 	result := make(map[string]int, 10)
 
-	walker := func(key string, value int) {
-		result[key] = value
+	walker := func(key []string, value int) {
+		result[strings.Join(key, "/")] = value
 	}
 
-	tr := trie.New[int]()
+	tr := gtrie.New[string, int]()
 
-	tr.Add("arc", 1)
-	tr.Add("bak", 2)
-	tr.Add("bar", 3)
-	tr.Add("boo", 4)
+	tr.Add([]string{"home", "teadove", "Documents"}, 1)
+	tr.Add([]string{"home", "teadove", "Downloads"}, 2)
+	tr.Add([]string{"home", "teadove", "Pictures"}, 3)
+	tr.Add([]string{"home", "tainella", "Documents"}, 4)
 
-	tr.Iter("b", walker)
+	tr.Iter([]string{"home", "teadove"}, walker)
 
-	if result["bak"] != 2 {
-		t.Fatal("Key not found")
+	if result["home/teadove/Documents"] != 1 {
+		t.Fatal("key not found")
 	}
-	if result["bar"] != 3 {
-		t.Fatal("Key not found")
+	if result["home/teadove/Downloads"] != 2 {
+		t.Fatal("key not found")
 	}
-	if result["boo"] != 4 {
-		t.Fatal("Key not found")
+	if result["home/teadove/Pictures"] != 3 {
+		t.Fatal("key not found")
 	}
 
-	_, ok := result["arc"]
+	_, ok := result["home/tainella/Documents"]
 	if ok {
-		t.Fatal("Key found, but don't need to exists")
+		t.Fatal("key found, but don't need to exists")
 	}
 }
 
 func TestTrieSuggest(t *testing.T) {
 	t.Parallel()
 
-	tr := trie.New[int]()
+	tr := gtrie.New[byte, int]()
 
-	tr.Add("arc", 1)
-	tr.Add("bak", 2)
-	tr.Add("bar", 3)
-	tr.Add("boo", 4)
+	tr.Add([]byte("arc"), 1)
+	tr.Add([]byte("bak"), 2)
+	tr.Add([]byte("bar"), 3)
+	tr.Add([]byte("boo"), 4)
 
 	var (
-		res []string
+		res [][]byte
 		ok  bool
 	)
 
-	if _, ok = tr.Suggest("c"); ok {
+	if _, ok = tr.Suggest([]byte("c")); ok {
 		t.Fatal("suggested c")
 	}
 
-	if res, ok = tr.Suggest("a"); !ok {
+	if res, ok = tr.Suggest([]byte("a")); !ok {
 		t.Fatal("not found a")
 	}
 
@@ -189,7 +190,7 @@ func TestTrieSuggest(t *testing.T) {
 		t.Fatal("suggest(a) != 1")
 	}
 
-	if res, ok = tr.Suggest("b"); !ok {
+	if res, ok = tr.Suggest([]byte("b")); !ok {
 		t.Fatal("not found b")
 	}
 
@@ -197,7 +198,7 @@ func TestTrieSuggest(t *testing.T) {
 		t.Fatal("suggest(b) != 3")
 	}
 
-	if res, ok = tr.Suggest("ba"); !ok {
+	if res, ok = tr.Suggest([]byte("ba")); !ok {
 		t.Fatal("not found ba")
 	}
 
@@ -205,7 +206,7 @@ func TestTrieSuggest(t *testing.T) {
 		t.Fatal("suggest(ba) != 2")
 	}
 
-	if res, ok = tr.Suggest("bak"); !ok {
+	if res, ok = tr.Suggest([]byte("bak")); !ok {
 		t.Fatal("not found bak")
 	}
 
@@ -219,18 +220,18 @@ func FuzzTrie(f *testing.F) {
 
 	f.Fuzz(func(t *testing.T, input string) {
 		input = strings.ToValidUTF8(input, "")
-		tr := trie.New[string]()
+		tr := gtrie.New[byte, string]()
 		m := make(map[string]string)
 
 		for _, p := range strings.Split(input, ",") {
 			key, val, _ := strings.Cut(p, ":")
 			m[key] = val
-			tr.Add(key, val)
+			tr.Add([]byte(key), val)
 		}
 
 		for k, v := range m {
-			if got, ok := tr.Find(k); !ok || got != v {
-				t.Errorf("Key %q, want %q, got %q", k, v, got)
+			if got, ok := tr.Find([]byte(k)); !ok || got != v {
+				t.Errorf("key %q, want %q, got %q", k, v, got)
 			}
 		}
 	})
@@ -239,20 +240,19 @@ func FuzzTrie(f *testing.F) {
 func TestNewFromSlice(t *testing.T) {
 	t.Parallel()
 
-	tr := trie.NewFromSlice[int]([]trie.Pair[int]{
-		{"arc", 1},
-		{"bak", 2},
-		{"bar", 3},
-		{"boo", 4},
+	tr := gtrie.NewFromSlice[byte, int]([]gtrie.Pair[byte, int]{
+		{[]byte("bak"), 2},
+		{[]byte("bar"), 3},
+		{[]byte("boo"), 4},
+		{[]byte("ark"), 1},
 	})
-
 	result := make(map[string]int, 10)
 
-	walker := func(key string, value int) {
-		result[key] = value
+	walker := func(key []byte, value int) {
+		result[string(key)] = value
 	}
 
-	tr.Iter("b", walker)
+	tr.Iter([]byte("b"), walker)
 
 	if result["bak"] != 2 {
 		t.Fatal("Key not found")

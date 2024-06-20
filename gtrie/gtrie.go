@@ -1,4 +1,4 @@
-package trie
+package gtrie
 
 import (
 	"bytes"
@@ -7,35 +7,34 @@ import (
 	"strings"
 )
 
-const rootNode = rune(0)
-
 // Trie represents generic prefix-tree.
-type Trie[T any] struct {
-	root *node[T]
+type Trie[K comparable, T any] struct {
+	root *node[K, T]
 }
 
 // New creates empty Trie.
-func New[T any]() *Trie[T] {
-	return &Trie[T]{root: makeNode[T](rootNode)}
+func New[K comparable, T any]() *Trie[K, T] {
+	var emptyKey K
+
+	return &Trie[K, T]{root: makeNode[K, T](emptyKey)}
 }
 
-type Pair[T any] struct {
-	Key   string
+type Pair[K comparable, T any] struct {
+	Key   []K
 	Value T
 }
 
 // NewFromSlice creates Trie from slice of Pairs.
-func NewFromSlice[T any](pairs []Pair[T]) *Trie[T] {
-	trie := New[T]()
+func NewFromSlice[K comparable, T any](pairs []Pair[K, T]) *Trie[K, T] {
+	trie := New[K, T]()
 	for _, pair := range pairs {
 		trie.Add(pair.Key, pair.Value)
 	}
-
 	return trie
 }
 
-// Add inserts new Key/Value pair.
-func (t *Trie[T]) Add(key string, value T) {
+// Add inserts new key/value pair.
+func (t *Trie[K, T]) Add(key []K, value T) {
 	n := t.root
 
 	for _, r := range key {
@@ -51,7 +50,7 @@ func (t *Trie[T]) Add(key string, value T) {
 	n.SetValue(value)
 }
 
-func (t *Trie[T]) find(key string) (n *node[T], ok bool) {
+func (t *Trie[K, T]) find(key []K) (n *node[K, T], ok bool) {
 	n = t.root
 
 	for _, r := range key {
@@ -65,9 +64,9 @@ func (t *Trie[T]) find(key string) (n *node[T], ok bool) {
 	return n, true
 }
 
-// Del removes node by Key.
-func (t *Trie[T]) Del(key string) (ok bool) {
-	var n, p *node[T]
+// Del removes node by key.
+func (t *Trie[K, T]) Del(key []K) (ok bool) {
+	var n, p *node[K, T]
 
 	if n, ok = t.find(key); !ok {
 		return
@@ -90,9 +89,9 @@ func (t *Trie[T]) Del(key string) (ok bool) {
 	return true
 }
 
-// Find does tree-lookup in order to find Value associated with given Key.
-func (t *Trie[T]) Find(key string) (value T, ok bool) {
-	var n *node[T]
+// Find does tree-lookup in order to find value associated with given key.
+func (t *Trie[K, T]) Find(key []K) (value T, ok bool) {
+	var n *node[K, T]
 
 	if n, ok = t.find(key); !ok {
 		return
@@ -102,8 +101,8 @@ func (t *Trie[T]) Find(key string) (value T, ok bool) {
 }
 
 // Suggest returns slice of existing keys with matching prefix.
-func (t *Trie[T]) Suggest(prefix string) (rv []string, ok bool) {
-	add := func(v string, _ T) {
+func (t *Trie[K, T]) Suggest(prefix []K) (rv [][]K, ok bool) {
+	add := func(v []K, _ T) {
 		rv = append(rv, v)
 	}
 
@@ -114,8 +113,8 @@ func (t *Trie[T]) Suggest(prefix string) (rv []string, ok bool) {
 
 // Iter iterates over trie by prefix using dfs.
 // Pass prefix="" to iterate over whole trie.
-func (t *Trie[T]) Iter(prefix string, walker func(key string, value T)) {
-	var n *node[T]
+func (t *Trie[K, T]) Iter(prefix []K, walker func(key []K, value T)) {
+	var n *node[K, T]
 	n, ok := t.find(prefix)
 	if !ok {
 		return
@@ -129,7 +128,7 @@ func (t *Trie[T]) Iter(prefix string, walker func(key string, value T)) {
 }
 
 // String implements fmt.Stringer interface.
-func (t *Trie[T]) String() string {
+func (t *Trie[K, T]) String() string {
 	var b bytes.Buffer
 
 	writeNode(&b, t.root, 0)
@@ -137,12 +136,14 @@ func (t *Trie[T]) String() string {
 	return b.String()
 }
 
-func writeNode[T any](
+func writeNode[K comparable, T any](
 	w io.Writer,
-	n *node[T],
+	n *node[K, T],
 	level int,
 ) {
-	template := "Key: '%c'"
+	var empty K
+
+	template := "key: '%c'"
 
 	if level > 0 {
 		template = strings.Repeat("\t", level) + template
@@ -150,8 +151,8 @@ func writeNode[T any](
 
 	switch {
 	case n.HasValue():
-		_, _ = fmt.Fprintf(w, template+" Value: '%v'", n.key, n.Value())
-	case n.key == rootNode:
+		_, _ = fmt.Fprintf(w, template+" value: '%v'", n.key, n.Value())
+	case n.key == empty:
 		_, _ = fmt.Fprint(w, "root")
 	default:
 		_, _ = fmt.Fprintf(w, template+":", n.key)
@@ -164,13 +165,13 @@ func writeNode[T any](
 	}
 }
 
-func dfsKeys[T any](
-	n *node[T],
-	prefix string,
-	handler func(key string, value T),
+func dfsKeys[K comparable, T any](
+	n *node[K, T],
+	prefix []K,
+	handler func(key []K, value T),
 ) {
 	for r, c := range n.children {
-		key := prefix + string(r)
+		key := append(prefix, r)
 
 		if c.HasValue() {
 			handler(key, c.value)
